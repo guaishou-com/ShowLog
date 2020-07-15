@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket</title>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- jsPanel CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/jspanel.css" rel="stylesheet">
+    <!-- jsPanel JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/jspanel.js"></script>
+
+    <!-- optional jsPanel extensions -->
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/extensions/modal/jspanel.modal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/extensions/tooltip/jspanel.tooltip.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/extensions/hint/jspanel.hint.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/extensions/layout/jspanel.layout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/extensions/contextmenu/jspanel.contextmenu.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.2/dist/extensions/dock/jspanel.dock.js"></script>
+
+
+    <script>
+        var e = {
+            "adminunicator": [null, false],
+            "algorithmpro": [null, false],
+            "armControl": [null, false],
+            "corHandle": [null, false],
+            "demod": [null, false],
+            "detectWYC": [null, false],
+            "deviceKeep": [null, false],
+            "pscanHandle": [null, false],
+            "transmit": [null, false],
+            "wifiUAV": [null, false],
+        };
+
+        function createWin(name) {
+            if (e[name][0] === null) {
+                e[name][0] = document.getElementById('tabletest_' + name);
+            }
+
+            e[name][0].style.fontSize = 16 + 'px';
+
+            if (e[name][1] === false) {
+                e[name][1] = true;
+                // create a default jsPanel
+                jsPanel.create({
+                    headerTitle: name,
+                    theme: 'dark',
+                    content: e[name][0],
+                    onclosed: function() {
+                        e[name][1] = false;
+                    }
+                });
+            } else {
+                alert("该窗口已经打开");
+            }
+
+        }
+    </script>
+
+    <script type="text/javascript">
+        var websocket = null;
+
+        window.onload = function(e) {
+            websocketInit("/ShowLog/index");
+        }
+
+        // window.onbeforeunload = function(e) {
+        //     console.log("beforeunload");
+
+        //     // e = e || window.event;
+
+        //     // // 兼容IE8和Firefox 4之前的版本
+        //     // if (e) {
+        //     //     e.returnValue = '关闭提示';
+        //     // }
+
+        //     //alert("获取到了页面要关闭的事件了！");
+
+        //     // Chrome, Safari, Firefox 4+, Opera 12+ , IE 9+
+        //     //return '关闭提示';
+        // };
+
+        window.onunload = function(e) {
+            //响应事件
+            //alert("获取到了页面要关闭的事件了！");
+            //websocket.send("websocket close");
+            if (websocket != null) {
+                console.log("close socket");
+                websocket.close();
+            }
+        };
+
+        function websocketInit(URL) {
+            websocket = new WebSocket("ws://" + window.location.host + URL);
+            websocket.onopen = function() {
+                console.log("onopen");
+                websocket.send("websocket open");
+            };
+            websocket.onmessage = function(e) {
+                var str = e.data;
+                var n = str.match(/adminunicator|algorithmpro|armControl|corHandle|demod|detectWYC|deviceKeep|pscanHandle|transmit|wifiUAV/gi);
+                console.log(n[0]);
+                var num = parseInt(e.data[0]);
+                console.log(num);
+                var tr;
+
+                switch (num) {
+                    case 3:
+                        tr = '<td style="color:PaleGreen ">' + e.data + '</td>';
+                        $("#tabletest_data").append('<tr>' + tr + '</tr>')
+                        break;
+                    case 4:
+                        tr = '<td style="color:GreenYellow ">' + e.data + '</td>';
+                        $("#tabletest_info").append('<tr>' + tr + '</tr>')
+                        break;
+                    case 5:
+                        tr = '<td style="color:Turquoise ">' + e.data + '</td>';
+                        $("#tabletest_debug").append('<tr>' + tr + '</tr>')
+                        break;
+                    case 6: //警告 黄色
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_warning").append('<tr>' + tr + '</tr>')
+                        break;
+                    case 7: //错误 红色
+                        tr = '<td style="color:Crimson " >' + e.data + '</td>';
+                        $("#tabletest_error").append('<tr>' + tr + '</tr>')
+                        break;
+                    case 8: //严重错误  大红色
+                        tr = '<td style="color:Red " >' + e.data + '</td>';
+                        $("#tabletest_fatal_error").append('<tr>' + tr + '</tr>')
+                        break;
+                    case 9: //重要消息会话  
+                        tr = '<td style="color:LightCoral " >' + e.data + '</td>';
+                        $("#tabletest_notice").append('<tr>' + tr + '</tr>')
+                        break;
+                }
+
+                $("#tabletest_all").append('<tr>' + tr + '</tr>')
+
+                switch (n[0]) {
+                    case "adminunicator":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_adminunicator").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "algorithmpro":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_algorithmpro").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "armControl":
+                        console.log("enter armControl");
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_armControl").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "corHandle":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_corHandle").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "demod":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_demod").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "detectWYC":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_detectWYC").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "deviceKeep":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_deviceKeep").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "transmit":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_transmit").append('<tr>' + tr + '</tr>')
+                        break;
+                    case "wifiUAV":
+                        tr = '<td style="color:Orange " >' + e.data + '</td>';
+                        $("#tabletest_wifiUAV").append('<tr>' + tr + '</tr>')
+                        break;
+                }
+
+            };
+
+            websocket.onclose = function(e) {
+                console.log("close", e);
+                //websocket.send("websocket close");
+                //websocket.close();
+            }
+
+        }
+    </script>
+
+
+
+</head>
+
+<body style="background-color:rgb(#f2f2f2) ">
+
+    <div class="btn-group">
+        <button id="adminunicator1" type="button" class="btn btn-default" onclick="createWin('adminunicator')">adminunicator</button>
+        <button id="algorithmpro1" type="button" class="btn btn-default" onclick="createWin('algorithmpro')">algorithmpro</button>
+        <button id="armControl1" type="button" class="btn btn-default" onclick="createWin('armControl')">armControl</button>
+        <button id="corHandle1" type="button" class="btn btn-default" onclick="createWin('corHandle')">corHandle</button>
+        <button id="demod1" type="button" class="btn btn-default" onclick="createWin('demod')">demod</button>
+        <button id="detectWYC1" type="button" class="btn btn-default" onclick="createWin('detectWYC')">detectWYC</button>
+        <button id="deviceKeep1" type="button" class="btn btn-default" onclick="createWin('deviceKeep')">deviceKeep</button>
+        <button id="pscanHandle1" type="button" class="btn btn-default" onclick="createWin('pscanHandle')">pscanHandle</button>
+        <button id="transmit1" type="button" class="btn btn-default" onclick="createWin('transmit')">transmit</button>
+        <button id="wifiUAV1" type="button" class="btn btn-default" onclick="createWin('wifiUAV')">wifiUAV</button>
+    </div>
+
+    <ul id="myTab" class="nav nav-tabs" style="background-color:rgb(256,256,256) ">
+        <li class="active"><a href="#all" data-toggle="tab"><strong>全部</strong></a></li>
+
+        <li class="dropdown">
+            <a href="#" id="grade_TabDrop" class="dropdown-toggle" data-toggle="dropdown">
+				等级 <b class="caret"></b></a>
+
+            <ul class="dropdown-menu" role="menu" aria-labelledby="grade_TabDrop">
+                <li><a href="#data" tabindex="-1" data-toggle="tab"><strong>数据</strong></a></li>
+                <li><a href="#info" tabindex="-1" data-toggle="tab"><strong>信息</strong></a></li>
+                <li><a href="#debug" tabindex="-1" data-toggle="tab"><strong>调试</strong></a></li>
+                <li><a href="#warning" tabindex="-1" data-toggle="tab"><strong>警告</strong></a></li>
+                <li><a href="#error" tabindex="-1" data-toggle="tab"><strong>错误</strong></a></li>
+                <li><a href="#fatal_error" tabindex="-1" data-toggle="tab"><strong>严重错误</strong></a></li>
+                <li><a href="#notice" tabindex="-1" data-toggle="tab"><strong>重要记录</strong></a></li>
+            </ul>
+
+        </li>
+
+        <li class="dropdown">
+            <a href="#" id="model_TabDrop" class="dropdown-toggle" data-toggle="dropdown">
+				模块 <b class="caret"></b></a>
+
+            <ul class="dropdown-menu" role="menu" aria-labelledby="model_TabDrop">
+                <li><a href="#adminunicator" tabindex="-1" data-toggle="tab"><strong>adminunicator</strong></a></li>
+                <li><a href="#algorithmpro" tabindex="-1" data-toggle="tab"><strong>algorithmpro</strong></a></li>
+                <li><a href="#armControl" tabindex="-1" data-toggle="tab"><strong>armControl</strong></a></li>
+                <li><a href="#corHandle" tabindex="-1" data-toggle="tab"><strong>corHandle</strong></a></li>
+                <li><a href="#demod" tabindex="-1" data-toggle="tab"><strong>demod</strong></a></li>
+                <li><a href="#detectWYC" tabindex="-1" data-toggle="tab"><strong>detectWYC</strong></a></li>
+                <li><a href="#deviceKeep" tabindex="-1" data-toggle="tab"><strong>deviceKeep</strong></a></li>
+                <li><a href="#pscanHandle" tabindex="-1" data-toggle="tab"><strong>pscanHandle</strong></a></li>
+                <li><a href="#transmit" tabindex="-1" data-toggle="tab"><strong>transmit</strong></a></li>
+                <li><a href="#wifiUAV" tabindex="-1" data-toggle="tab"><strong>wifiUAV</strong></a></li>
+            </ul>
+
+        </li>
+
+    </ul>
+    <div id="myTabContent" class="tab-content">
+        <div class="tab-pane fade in active" id="all">
+            <table id='tabletest_all'></table>
+        </div>
+        <div class="tab-pane fade" id="data">
+            <table id='tabletest_data'></table>
+        </div>
+        <div class="tab-pane fade" id="info">
+            <table id='tabletest_info'></table>
+        </div>
+        <div class="tab-pane fade" id="debug">
+            <table id='tabletest_debug'></table>
+        </div>
+        <div class="tab-pane fade" id="warning">
+            <table id='tabletest_warning'></table>
+        </div>
+        <div class="tab-pane fade" id="error">
+            <table id='tabletest_error'></table>
+        </div>
+        <div class="tab-pane fade" id="fatal_error">
+            <table id='tabletest_fatal_error'></table>
+        </div>
+        <div class="tab-pane fade" id="notice">
+            <table id='tabletest_notice'></table>
+        </div>
+
+
+        <div class="tab-pane fade" id="adminunicator">
+            <table id='tabletest_adminunicator'></table>
+        </div>
+        <div class="tab-pane fade" id="algorithmpro">
+            <table id='tabletest_algorithmpro'></table>
+        </div>
+        <div class="tab-pane fade" id="armControl">
+            <table id='tabletest_armControl'></table>
+        </div>
+        <div class="tab-pane fade" id="corHandle">
+            <table id='tabletest_corHandle'></table>
+        </div>
+        <div class="tab-pane fade" id="demod">
+            <table id='tabletest_demod'></table>
+        </div>
+        <div class="tab-pane fade" id="detectWYC">
+            <table id='tabletest_detectWYC'></table>
+        </div>
+        <div class="tab-pane fade" id="deviceKeep">
+            <table id='tabletest_deviceKeep'></table>
+        </div>
+        <div class="tab-pane fade" id="pscanHandle">
+            <table id='tabletest_pscanHandle'></table>
+        </div>
+        <div class="tab-pane fade" id="transmit">
+            <table id='tabletest_transmit'></table>
+        </div>
+        <div class="tab-pane fade" id="wifiUAV">
+            <table id='tabletest_wifiUAV'></table>
+        </div>
+    </div>
+
+</body>
+
+</html>
